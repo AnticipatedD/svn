@@ -1,12 +1,10 @@
 {
-  "name": "open-source-guide",
-  "private": true,
   "scripts": {
-    "test": "script/test",
-    "postinstall": "cd test && npm install"
+    "test": "jest",
+    "test:js": "jest"
   },
-  "dependencies": {
-    "primer-core": "7.0.0",
-    "primer-marketing": "7.0.0"
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0"
   }
 }
