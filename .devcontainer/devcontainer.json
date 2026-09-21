@@ -1,0 +1,8 @@
+{
+  "name": "Jekyll Docs Environment",
+  "image": "mcr.microsoft.com/devcontainers/ruby:3.2",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  "postCreateCommand": "script/bootstrap"
+}
