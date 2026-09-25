@@ -1,30 +1,75 @@
 name: GitHub Actions CI
+
 on:
   push:
-    branches: master
-  pull_request: []
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
 jobs:
-  tests:
+  lint:
+    name: Code Quality Linting Gate
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Git repository
-      uses: actions/checkout@v1
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Ruby
-      uses: actions/setup-ruby@v1
+      - name: Set up Ruby
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
 
-    - name: Set up Node
-      uses: actions/setup-node@v1
+      - name: Restore Bundler Cache
+        uses: actions/cache@v4
+        with:
+          path: vendor/gems
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: ${{ runner.os }}-gems-
 
-    - name: Restore bundler cache
-      uses: actions/cache@v1
-      with:
-        path: vendor/gems
-        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-        restore-keys: ${{ runner.os }}-gems-
+      - name: Bootstrap Tools
+        run: script/bootstrap
 
-    - name: Bootstrap
-      run: script/bootstrap
+      - name: Enforce Ruby RuboCop Quality Rules
+        run: bundle exec rubocop
 
-    - name: Tests
-      run: script/test
+  tests:
+    name: Dependency Audits & Test Suites
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Restore Bundler Cache
+        uses: actions/cache@v4
+        with:
+          path: vendor/gems
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: ${{ runner.os }}-gems-
+
+      - name: Bootstrap dependencies
+        run: script/bootstrap
+
+      - name: Run Node Dependency Security Audit
+        run: npm audit --audit-level=high
+
+      - name: Run Ruby Bundler Security Audit
+        run: |
+          gem install bundler-audit
+          bundle exec bundler-audit check --update
+
+      - name: Execute Test Suite with Coverage Gate
+        run: |
+          script/test
+          npx jest --coverage --coverageThreshold="{\"global\":{\"lines\":50}}"
