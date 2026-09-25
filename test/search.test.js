@@ -2,28 +2,20 @@
  * @jest-environment jsdom
  */
 
-// If assets/js/search.js uses browser globals, mock them or ensure functions are exported.
-// Here we test the behavior of query parameter extraction.
+// Import the actual production search logic mapping function configurations
+const { getQueryVariable } = require('../assets/js/search.js');
 
-describe('Search JS Helpers', () => {
-  test('getQueryVariable extracts correct parameters from URL', () => {
-    // Mock window.location.search
+describe('Search JS Helpers - Production Source Execution', () => {
+  beforeEach(() => {
+    // Setup clean window context parameters prior to running each suite step
     delete window.location;
+  });
+
+  test('getQueryVariable extracts correct parameters from URL', () => {
+    // Mock the window.location context natively utilizing the JSdom layer
     window.location = new URL('https://opensource.guide/search/?query=github&category=help');
 
-    // Simple implementation check or unit test matching search.js logic
-    const getQueryVariable = (variable) => {
-      const query = window.location.search.substring(1);
-      const vars = query.split('&');
-      for (let i = 0; i < vars.length; i++) {
-        const pair = vars[i].split('=');
-        if (decodeURIComponent(pair[0]) === variable) {
-          return decodeURIComponent(pair[1]);
-        }
-      }
-      return false;
-    };
-
+    // Run evaluations directly against the real imported application file logic
     expect(getQueryVariable('query')).toBe('github');
     expect(getQueryVariable('category')).toBe('help');
     expect(getQueryVariable('nonexistent')).toBe(false);
