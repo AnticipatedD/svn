@@ -2,6 +2,26 @@
 layout:
 ---
 
+// Extracted globally for complete structural unit testability mapping
+function getQueryVariable(variable) {
+  var query = window.location.search.substring(1);
+  var vars = query.split('&');
+
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+
+    if (pair[0] === variable) {
+      return decodeURIComponent(pair[1].replace(/\+/g, '%20'));
+    }
+  }
+  return false;
+}
+
+// Ensure compatibility with commonJS test loaders without breaking browser execution runtimes
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { getQueryVariable };
+}
+
 (function() {
 
 var searchWorker;
@@ -22,9 +42,11 @@ function setup() {
   }
 
   // Listen for changes to search box
-  searchBox.addEventListener('keyup', function(e) {
-    search(searchBox.value);
-  });
+  if (searchBox) {
+    searchBox.addEventListener('keyup', function(e) {
+      search(searchBox.value);
+    });
+  }
 }
 
 function search(searchTerm) {
@@ -32,7 +54,9 @@ function search(searchTerm) {
   setSearchingState();
 
   // Set value of search box to search parameter
-  searchBox.setAttribute("value", searchTerm);
+  if (searchBox) {
+    searchBox.setAttribute("value", searchTerm);
+  }
 
   if(!searchWorker) {
     searchWorker = new Worker("{{ "/js/search_worker.js" | relative_url }}");
@@ -48,22 +72,11 @@ function search(searchTerm) {
 function displaySearchResults(results) {
   var searchResults = document.getElementById('search-results');
 
-  if (results.length) {
-    searchResults.innerHTML = results.join("");
-  } else {
-    searchResults.innerHTML = '<li>No results found</li>';
-  }
-}
-
-function getQueryVariable(variable) {
-  var query = window.location.search.substring(1);
-  var vars = query.split('&');
-
-  for (var i = 0; i < vars.length; i++) {
-    var pair = vars[i].split('=');
-
-    if (pair[0] === variable) {
-      return decodeURIComponent(pair[1].replace(/\+/g, '%20'));
+  if (searchResults) {
+    if (results.length) {
+      searchResults.innerHTML = results.join("");
+    } else {
+      searchResults.innerHTML = '<li>No results found</li>';
     }
   }
 }
@@ -84,7 +97,7 @@ function updateHistory(searchTerm) {
   } else {
     history.pushState({search: searchTerm}, "", newURL);
     replaceState = true;
-    clearTimeout(replaceStateTimeout)
+    clearTimeout(replaceStateTimeout);
     replaceStateTimeout = setTimeout(function() { replaceState = false; }, 5000);
   }
 }
